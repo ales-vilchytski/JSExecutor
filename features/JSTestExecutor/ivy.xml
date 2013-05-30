@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
+    <info
+        organisation="by.ales.javascript"
+        module="jstestexecutor"
+        status="integration">
+	</info>
+	<configurations>
+		<conf name="compile" visibility="private"/>
+		<conf name="runtime" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact type="jar" conf="runtime"/>
+	</publications>
+	<dependencies>
+		<dependency org="org.apache.ant" name="ant" rev="1.8.2" conf="compile->*"/>
+		<dependency org="by.ales.javascript" name="jsexecutor" rev="latest.integration" conf="*->runtime"/>
+	</dependencies>
+</ivy-module>

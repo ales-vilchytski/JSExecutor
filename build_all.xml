@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:ivy="antlib:org.apache.ivy.ant"
+		 default="publish_with_features" basedir=".">
+	
+	<property name='features' value='features'/>
+	<property name='dist' value='dist'/>
+	
+	<target name="publish_with_features">
+		<ant antfile="build.xml" target="publish"/>
+		
+		<!--Traverse features and publish them, then copy .jars to dist folder-->
+		<script language="javascript"><![CDATA[
+		    importClass(java.io.File);
+			
+			var file = new File(features);
+			var features_list = file.list(function(dir, name) {
+				return new java.io.File(dir, name).isDirectory();
+			});
+			for (var i in features_list) {
+				var ant = project.createTask('ant');
+				var feature_dir = features + '/' + features_list[i];
+				ant.setDir(new File(feature_dir));
+				ant.setAntfile('build.xml');
+				ant.setTarget('publish');
+				ant.perform();
+				
+				copy = project.createTask('copy');
+				copy.setTodir(new File(dist));
+				fileset = project.createDataType('fileset');
+				fileset.setDir(new File(feature_dir + '/' + dist));
+				fileset.setIncludes('**/*.jar');
+				copy.addFileset(fileset);
+				copy.perform();
+			}
+		]]>
+		</script>
+	</target>
+	
+</project>

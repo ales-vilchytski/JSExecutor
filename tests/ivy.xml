@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
+    <info
+        organisation="by.ales.javascript"
+        module="jsexecutortest"
+        status="integration">
+	</info>
+	<configurations>
+		<conf name="jtest" visibility="private"/>
+		<conf name="jstest" visibility="private"/>
+		<conf name="alltest" visibility="private" />
+	</configurations>
+	<dependencies>
+		<dependency org="by.ales.javascript" name="jsexecutor" rev="latest.integration" conf="alltest,jtest->runtime"/>
+		<dependency org="by.ales.javascript" name="jstestexecutor" rev="latest.integration" conf="alltest,jstest->runtime"/>
+		<dependency org="junit" name="junit" rev="4.6" conf="alltest,jtest->master"/>
+	</dependencies>
+</ivy-module>
