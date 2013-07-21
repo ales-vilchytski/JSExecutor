@@ -10,6 +10,9 @@
 		<conf name="runtime" visibility="public"/>
 	</configurations>
 	<publications>
-    	<artifact type="jar" conf="runtime"/>    	
+    	<artifact type="jar" conf="runtime"/>
     </publications>
+    <dependencies>
+		<dependency org="org.mozilla" name="rhino" rev="1.7R4"/>
+	</dependencies>
 </ivy-module>
