@@ -9,6 +9,7 @@
 	
 	<target name="resolve" description="Retrieve all dependencies to ${lib}">
         <ivy:resolve file="ivy.xml"/>
+	<!--	<ivy:report todir="ivy-report" graph="false"/> -->
 		<ivy:retrieve pattern="${lib}/[artifact]-[revision].[ext]"/>
     </target>
 	
@@ -30,6 +31,7 @@
 	</target>
 	
 	<target name="jar" depends="compile" description="Calls 'compile' and creates jar from ${bin}">
+    	<delete dir="${dist}"/>
 		<jar destfile="${dist}/jstestexecutor.jar" >
 		    <fileset dir="${bin}"/>
 		</jar>

@@ -4,7 +4,20 @@
 	
 	<property name="src" location="src"/>
   	<property name="bin" location="bin"/>
+	<property name="lib" location="lib"/>
   	<property name="dist" location="dist"/>
+	
+	<target name="resolve" description="Retrieve all dependencies to ${lib}">
+        <ivy:resolve file="ivy.xml"/>
+	<!--	<ivy:report todir="ivy-report" graph="false"/> -->
+		<ivy:retrieve pattern="${lib}/[artifact]-[revision].[ext]"/>
+    </target>
+	
+	<path id="lib.cpath">
+		<fileset dir="${lib}">
+        	<include name="**/*.jar"/>
+    	</fileset>
+	</path>
 	
 	<target name="compile" description="Compiles all Java classes and copies all .js files to ${bin}">
 		<mkdir dir="${bin}"/>
@@ -17,12 +30,13 @@
 	</target>
 	
 	<target name="jar" depends="compile" description="Compiles, then create jar in ${dist}">
+    	<delete dir="${dist}"/>
 		<jar destfile="${dist}/jsexecutor.jar" >
 		    <fileset dir="${bin}"/>
 		</jar>
 	</target>
 	
-	<target name="dist" depends="jar" description="Creates jar with distribution">
+	<target name="dist" depends="resolve,jar" description="Creates jar with distribution">
 		<echo>Creating distribution:</echo>
 	</target>
 		
@@ -35,6 +49,7 @@
 	
 	<target name="clean" description="Cleans up all output directories">
 		<delete dir="${bin}"/>
+    	<delete dir="${lib}"/>
     	<delete dir="${dist}"/>
 	</target>
 	

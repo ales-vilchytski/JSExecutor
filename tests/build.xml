@@ -93,7 +93,7 @@
 		<delete dir="${tmp}"/>
 		<delete dir="${bin}"/>
     	<delete dir="${lib}"/>
-    	<delete dir="${dist}"/>
+    	<delete dir="${tmp}"/>
 	</target>
 
 </project>
