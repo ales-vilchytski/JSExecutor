@@ -10,7 +10,6 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.RequireBuilder;
 
-
 /**
  * Wraps Rhino classes to evaluate JavaScript using CommonJS.module.
  * Use method {@link RhinoExecutor#eval(String, Map)} to evaluate module by ID.
@@ -22,13 +21,31 @@ import org.mozilla.javascript.commonjs.module.RequireBuilder;
  * <br>
  * Default constructor creates instance which will search modules in '/js/' dir
  * using default {@link DirRequireBuilder} to create {@link Require} instances.
+ * <br>
+ * !!! Multithreading isn't checked !!!
+ * <br>
+ * Executor instance can use JSDT Rhino Debugger 
+ * {@linkplain http://wiki.eclipse.org/JSDT/Debug/Rhino}
+ * To use scripts debug:
+ * <p>1. Put jars for debugging to classpath:</p>
+ *   <ul>
+ *     <li>org.eclipse.wst.jsdt.debug.rhino.debugger</li>
+ *	   <li>org.eclipse.wst.jsdt.debug.transport</li>
+ *	   <li>* they can be found at Eclipse IDE home when JSDT for Rhino installed</li>
+ *   </ul>
+ * <p>2. Use method {@link RhinoExecutor#startDebugger(String)} 
+ * with appropriate settings</p>
+ * <p>3. Start remote Rhino debugger (usually from Eclipse IDE)</p>
+ * <p>4. Enjoy</p>
+ * <p>* Tip: use 'Add script load breakpoint' at first usage to bind sources 
+ * to debugger</p>
  */
 public class RhinoExecutor {
 
 	private ContextFactory contextFactory;
 	private RequireBuilder requireBuilder;
 	private Listener debugger;
-	private boolean debug;
+	private boolean debugging;
 	private String debugSettings;
 	
 	private static DirRequireBuilder createDirRequireBuilder(String jsDir) {
@@ -132,8 +149,8 @@ public class RhinoExecutor {
 	/**
 	 * @return true if debugger started
 	 */
-	public boolean isDebug() {
-		return debug;
+	public boolean isDebugging() {
+		return debugging;
 	}
 	
 	/**
@@ -156,8 +173,9 @@ public class RhinoExecutor {
 	 * See page on wiki {@linkplain http://wiki.eclipse.org/JSDT/Debug/Embedding_Rhino_Debugger}
 	 * 
 	 * @param debugSettings debug settings for JSDT Rhino Debugger
+	 * @return true if debugger is started
 	 */
-	public void startDebugger(String debugSettings) {
+	public boolean startDebugger(String debugSettings) {
 		if (debugger == null) {
 			Constructor<?> debuggerConstructor;
 			try {
@@ -171,17 +189,20 @@ public class RhinoExecutor {
 
 				contextFactory.addListener(debugger);
 				debugger.getClass().getMethod("start").invoke(debugger);
-				debug = true;
+				debugging = true;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+		return debugging;
 	}
 	
 	/**
 	 * Stops debugger instance associated with current ContextFactory.
+	 * 
+	 * @return true if debugger is stopped
 	 */
-	public void stopDebugger() {
+	public boolean stopDebugger() {
 		if (debugger != null) {
 			try {
 				getContextFactory().removeListener(debugger);
@@ -190,7 +211,9 @@ public class RhinoExecutor {
 				e.printStackTrace();
 			}
 			debugger = null;
-			debug = false;
+			debugging = false;
 		}
+		System.out.println("helloworld");
+		return !debugging;
 	}
 }

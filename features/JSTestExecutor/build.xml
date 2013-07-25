@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:ivy="antlib:org.apache.ivy.ant" 
-		 default="jar" basedir=".">
+		 default="dist" basedir=".">
 		
 	<property name="src" value="src"/>
 	<property name="bin" value="bin"/>
   	<property name="lib" location="lib"/>
 	<property name="dist" value="dist"/>
 	
-	<target name="resolve" description="Retrieve all dependencies to ${lib}">
-        <ivy:resolve file="ivy.xml"/>
-	<!--	<ivy:report todir="ivy-report" graph="false"/> -->
-		<ivy:retrieve pattern="${lib}/[artifact]-[revision].[ext]"/>
+	<target name="ivysettings" description="Internal task setting ivy config">
+		<ivy:settings file="../../ivysettings.xml" />
+	</target>
+	
+	<target name="resolve" depends="ivysettings" description="Retrieve all dependencies to ${lib}">
+		<ivy:resolve file="ivy.xml"/>
+	<!-- <ivy:report todir="ivy-report" graph="false"/> -->
+		<!-- retrieve copy of artifacts to avoid further resolves --> 
+		<ivy:retrieve pattern="${lib}/[artifact]-[revision].[ext]" sync="true"/>
     </target>
 	
 	<path id="lib.cpath">
@@ -38,11 +43,10 @@
 	</target>
 		
 	<target name="dist" depends="resolve,jar" description="Resolves dependencies and creates jar with distribution">
-		<echo>Creating distribution:</echo>
+		<echo>Distribution created</echo>
 	</target>
 	
 	<target name="publish" depends="dist" description="Publishes .jar into local repo">
-		<ivy:resolve file="ivy.xml" />
 		<ivy:publish resolver="local" pubrevision="1.0" overwrite="true">
 		   <artifacts pattern="${dist}/[artifact].[ext]" />
 		</ivy:publish>

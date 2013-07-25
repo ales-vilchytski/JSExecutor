@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:ivy="antlib:org.apache.ivy.ant"
-		 default="publish_with_features" basedir=".">
+		 default="publish" basedir=".">
 	
 	<property name='features' value='features'/>
 	<property name='dist' value='dist'/>
 	
-	<target name="publish_with_features">
-		<ant antfile="build.xml" target="publish"/>
+	<target name="_perform_task_on_root_and_features">
+		<ant antfile="build.xml" target="${task}"/>
 		
-		<!--Traverse features and publish them, then copy .jars to dist folder-->
 		<script language="javascript"><![CDATA[
 		    importClass(java.io.File);
 			
@@ -21,19 +20,23 @@
 				var feature_dir = features + '/' + features_list[i];
 				ant.setDir(new File(feature_dir));
 				ant.setAntfile('build.xml');
-				ant.setTarget('publish');
+				ant.setTarget(task);
 				ant.perform();
-				
-				copy = project.createTask('copy');
-				copy.setTodir(new File(dist));
-				fileset = project.createDataType('fileset');
-				fileset.setDir(new File(feature_dir + '/' + dist));
-				fileset.setIncludes('**/*.jar');
-				copy.addFileset(fileset);
-				copy.perform();
 			}
 		]]>
 		</script>
+	</target>
+	
+	<target name="publish" description="Traverses root and features and publishes them">
+		<antcall target="_perform_task_on_root_and_features">
+			<param name="task" value="publish"/>
+		</antcall>
+	</target>
+	
+	<target name="clean" description="Traverses root and features and cleans up their out folders">
+		<antcall target="_perform_task_on_root_and_features">
+			<param name="task" value="clean"/>
+		</antcall>
 	</target>
 	
 </project>
