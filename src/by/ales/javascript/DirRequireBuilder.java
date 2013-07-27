@@ -1,6 +1,7 @@
 package by.ales.javascript;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,7 +18,8 @@ import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider;
 /**
  * Wraps {@link UrlModuleSourceProvider} and {@link SoftCachingModuleScriptProvider}
  * and creates {@link Require}, which will search modules in specified directories.
- * Default value for sandboxing is 'false'. 
+ * <br>
+ * Note, default value for Require.sandboxed is 'false'. 
  */
 public class DirRequireBuilder extends RequireBuilder {
 
@@ -25,25 +27,55 @@ public class DirRequireBuilder extends RequireBuilder {
 	private List<URI> lookupPaths = new LinkedList<URI>();
 	private ModuleScriptProvider scriptProvider;
 	
+	/**
+	 * Creates empty builder with no paths
+	 */
 	public DirRequireBuilder() {
 		setSandboxed(false);
 	}
 	
+	/**
+	 * Creates builder with one searh directory
+	 * 
+	 * @param jsDir
+	 *            path to directory according to
+	 *            {@link Class#getResource(String)} which may not contain
+	 *            trailing '/', it will be appended
+	 */
+	public DirRequireBuilder(String jsDir) {
+		this();
+		addJSDir(jsDir);
+	}
+	
 	public DirRequireBuilder(List<URI> lookupPaths) {
+		this();
 		this.lookupPaths = lookupPaths;
+	}
+	
+	public List<URI> getLookupPaths() {
+		return lookupPaths;
 	}
 	
 	/**
 	 * Adds JavaScript modules search directory.
 	 * 
-	 * @param path path to directory for searching modules
-	 * @throws Exception if there is no such directory //TODO choose appropriate exception
+	 * @param path
+	 *            path to directory according to 
+	 *            {@link Class#getResource(String)} which may not contain
+	 *            trailing '/', it will be appended
+	 * @return true if directory exists and was added to paths
 	 */
-	public void addJSDir(String path) throws Exception { //TODO choose appropriate exception
-		URL jsDir = getClass().getResource(path);
+	public boolean addJSDir(String path) {
+		URL jsDir = getClass().getResource(
+				(path.endsWith("/") || path.endsWith("\\")) ? (path) : (path + "/"));
+		boolean result = false;
 		if (jsDir != null) {
-			lookupPaths.add(jsDir.toURI());
+			try {
+				lookupPaths.add(jsDir.toURI());
+				result = true;
+			} catch (URISyntaxException e) {}
 		}
+		return result;
 	}
 	
 	@Override
