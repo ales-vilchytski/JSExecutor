@@ -68,7 +68,7 @@
 	
 	<target name='jstest' description='Performs all js-tests'>
 		<taskdef name='jstest' 
-			 	 classname='by.ales.javascript.JSTestExecutor' >
+			 	 classname='by.ales.javascript.JSR223TestExecutor' >
 			<classpath refid='lib.cpath'/>
 		</taskdef>
 	

@@ -27,11 +27,11 @@ import javax.script.ScriptException;
  * 
  * !!!NOT THREAD SAFE!!!
  * 
- * @see by.ales.javascript.JSTestExecutor
+ * @see by.ales.javascript.JSR223TestExecutor
  *  
  * @author Ales Vilchytski
  */
-public class JSExecutor {
+public class JSR223Executor {
 
 	private String jsDir = "";
 	private final String executorVar;
@@ -45,14 +45,14 @@ public class JSExecutor {
 	 * 
 	 * @param executorVar name of executor variable
 	 */
-	public JSExecutor(String executorVar) {
+	public JSR223Executor(String executorVar) {
 		this.executorVar = executorVar;
 	}
 	
 	/**
 	 * Uses default executor variable name '$'
 	 */
-	public JSExecutor() {
+	public JSR223Executor() {
 		this("$");
 	}
 	

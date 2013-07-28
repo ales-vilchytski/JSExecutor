@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- example of use JSTestExecutor in Ant file -->
+<!-- example of use JSR223TestExecutor in Ant file -->
 <project default="jstest" basedir=".">
 		
 	<!--========= Add classpath with task ===== -->
@@ -11,7 +11,7 @@
 	
 	<!--========= Create taskdef ========= -->
 	<taskdef name='jstest' 
-			 classname='by.ales.javascript.JSTestExecutor' >
+			 classname='by.ales.javascript.JSR223TestExecutor' >
 		<classpath refid='built.cpath'/>
 	</taskdef>
 	

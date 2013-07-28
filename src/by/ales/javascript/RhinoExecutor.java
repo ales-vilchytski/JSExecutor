@@ -19,9 +19,6 @@ import org.mozilla.javascript.commonjs.module.RequireBuilder;
  * sandboxed factory) and {@link RequireBuilder} (e.g. with custom
  * {@link ModuleScriptProvider}).
  * <br>
- * Default constructor creates instance which will search modules in '/js/' dir
- * using default {@link DirRequireBuilder} to create {@link Require} instances.
- * <br>
  * !!! Multithreading isn't checked !!!
  * <br>
  * Executor instance can use JSDT Rhino Debugger 
