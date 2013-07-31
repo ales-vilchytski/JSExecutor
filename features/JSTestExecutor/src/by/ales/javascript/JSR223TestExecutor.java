@@ -13,6 +13,13 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.FileSet;
 
+
+/**
+ * Ant task which uses {@link by.ales.javascript.JSR223Executor} and 
+ * {@link http://code.google.com/p/rhinounit/} to run JavaScript tests.
+ * <br>
+ * See example.xml to see how it can be used. 
+ */
 public class JSR223TestExecutor extends Task {
 
 	private String options = "{}";
