@@ -1,8 +1,5 @@
 package by.ales.javascript;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 
@@ -17,7 +14,6 @@ public class RhinoTestExecutor extends Task {
 		RhinoExecutor executor = new RhinoExecutor(builder);
 				
 		executor.execute("test1");
-		executor.execute("test2");
 		
 	}
 	

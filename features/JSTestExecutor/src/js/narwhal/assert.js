@@ -31,8 +31,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // -- ashb Ash Berlin 
 //   contributions annotated
 
+/**
+ * Code was changed to use only Mozilla Rhino.
+ */
 var util = require("util");
-var system = require("system");
 
 // 1. The assert module provides functions that throw
 // AssertionError's when particular conditions are not met. The
@@ -53,25 +55,7 @@ assert.AssertionError = function (options) {
     this.operator = options.operator;
 
     // this lets us get a stack trace in Rhino
-    if (system.engine == "rhino")
-        this.rhinoException = Packages.org.mozilla.javascript.JavaScriptException(this, null, 0);
-
-    // V8 specific
-    if (Error.captureStackTrace) {
-        Error.captureStackTrace(this, (this.fail || assert.fail));
-        // Node specific, removes the node machinery stack frames
-        // XXX __filename will probably not always be the best way to detect Node
-        if (typeof __filename !== undefined) {
-            var stack = this.stack.split("\n");
-            for (var i = stack.length - 1; i >= 0; i--) {
-                if (stack[i].indexOf(__filename) != -1) {
-                    this.stack = stack.slice(0, i + 2).join("\n");
-                    break;
-                }
-            }
-        }
-    }
-
+    this.rhinoException = new Packages.org.mozilla.javascript.JavaScriptException(this, null, 0);
 };
 
 // XXX extension

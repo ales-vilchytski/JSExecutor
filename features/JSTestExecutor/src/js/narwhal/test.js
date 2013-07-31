@@ -22,61 +22,38 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // -- zaach Zachary Carter
 // -- kriskowal Kris Kowal Copyright (C) 2009-2010 MIT License
 
-var SYSTEM = require('system');
-var FS = require('file');
-var UTIL = require('util');
+/*
+ * This file was revised for Mozilla Rhino 1.7R4
+ * Changes:
+ *  - module can't be executed as main
+ *  - stack tracing changed according Rhino specific
+ *  - logging format adopted for Windows terminal
+ *  - logging logic changed like JUnit (executes test then print result)
+ *  
+ *  TODO add html report feature
+ */
+
 var ASSERT = require("assert");
-var TERM = require("term");
 var jsDump = require("test/jsdump").jsDump;
 
-var ARGS = require('args');
-var parser = exports.parser = new ARGS.Parser();
-parser.option('--no-color', 'color').def(true).set(false);
-parser.option('--loop', 'loop').def(false).set(true);
-parser.option('--show-stack-traces', 'showStackTraces').def(false).set(true);
-parser.option('--show-passes', 'showPasses').def(false).set(true);
-parser.option('-q', '--quiet', 'quiet').def(false).set(true);
-parser.helpful();
+exports.run = function(test, opts) {
+	if (!test) {
+		test = require(test);
+	}
+	if (!opts) {
+		opts = {};
+	}
+	(opts.title) ? (opts) : (opts.title = '');
+	(opts.showPasses) ? (opts) : (opts.showPasses = true);
+	(opts.showStackTraces) ? (opts) : (opts.showStackTraces = true);
+	
+	var log = new exports.Log(opts.title, opts);
+	
+	_run(test, log);
 
-function getStackTrace(e) {
-    if (!e) {
-        return "";
-    }
-    else if (e.rhinoException) {
-        var s = new Packages.java.io.StringWriter();
-        e.rhinoException.printStackTrace(new Packages.java.io.PrintWriter(s));
-        return String(s.toString());
-    }
-    else if (e.javaException) {
-        var s = new Packages.java.io.StringWriter();
-        e.javaException.printStackTrace(new Packages.java.io.PrintWriter(s));
-        return String(s.toString());
-    }
-    else if (e.stack) {
-        return String(e.stack);
-    }
-    return "";
-}
+	log.report();
 
-exports.run = function(test, log) {
-    var options = parser.parse([module.path].concat(SYSTEM.args));
-    if (!test) {
-        var id = FS.canonical(options.args.shift());
-        test = require(id);
-    }
-
-    if (options.color == false)
-        stream.disable();
-    if (!log)
-        log = new exports.Log(id, options);
-
-    do {
-        var result = _run(test, log);
-    } while (options.loop);
-
-    log.report();
-    
-    return result;
+	return log.fails + log.errors;
 }
 
 var _run = function (test, log, options) {
@@ -99,33 +76,12 @@ var _run = function (test, log, options) {
                 if (typeof test.setup === "function")
                     test.setup();
 
-                var globals = {};
-                for (var name in SYSTEM.global) {
-                    globals[name] = true;
-                }
-
                 try {
-                    try {
-                        if (section.begin)
-                            section.begin();
-                        test[property](assert);
-                    } finally {
-                        if (!test.addsGlobals) {
-                            for (var name in SYSTEM.global) {
-                                if (!globals[name]) {
-                                    delete SYSTEM.global[name];
-                                    throw new ASSERT.AssertionError({
-                                        "message": "New global introduced: " + UTIL.enquote(name)
-                                    });
-                                }
-                            }
-                        }
-                        if (section.end)
-                            section.end();
-                    }
-
-                    if (!section.passes)
-                        section.pass();
+                   test[property](assert);
+                   
+                   if (!section.passes) {
+                       section.pass();
+                   }
                 } catch (e) {
                     if (e.name === "AssertionError") {
                         section.fail(e);
@@ -135,6 +91,8 @@ var _run = function (test, log, options) {
                 } finally {
                     if (typeof test.teardown === "function")
                         test.teardown();
+                    
+                    section.flush();
                 }
             } else {
                 _run(test[property], section, options);
@@ -143,21 +101,47 @@ var _run = function (test, log, options) {
     }
 };
 
+function getStackTrace(e) {
+    if (!e) {
+    return "";
+}
+else if (e instanceof java.lang.Exception) {
+    var s = new Packages.java.io.StringWriter();
+    e.printStackTrace(new Packages.java.io.PrintWriter(s));
+    return String(s.toString());
+}
+else if (e.stack) {
+    return String(e.message + "\n" + e.stack);
+} else {
+    return String(e);
+}
+return "";
+}
+
 /*
-    Log API as applied by the generic test runner:
-        log.pass(message_opt)
-        log.fail(assertion)
-        log.error(exception)
-        log.section(name) :Log
-    Log API as used by the command line test runner:
-        new Log(name_opt, options)
+Log API as applied by the generic test runner:
+  log.pass()
+  log.fail(assertion)
+  log.error(exception)
+  log.flush() - writes actual info to stream, can be called once
+  log.section(name) :Log
+        
+Report format:
+ <PASS | FAIL | ERROR> test n 
+   [message]
+ <PASS | FAIL | ERROR> test n + 1 
+   [message]
+   <PASS | FAIL | ERROR> test n(m) 
+     [message]
+  ...
 */
 
 exports.Log = function (name, options, stream, parent, root) {
-    if (!stream)
-        stream = TERM.stream;
+    if (!stream) {
+        stream = java.lang.System.out;
+    }
     this.options = options;
-    this.stream = new exports.Section(stream, "  ");
+    this.stream = stream;
     this.name = name;
     this.parent = parent;
     this.root = root || this;
@@ -165,82 +149,82 @@ exports.Log = function (name, options, stream, parent, root) {
     this.fails = 0;
     this.errors = 0;
 
-    if (!options.quiet)
-        this.flush();
+    this.indent = (parent && parent.indent != null) ? (parent.indent + "  ") : ("");
+    this.content = { 
+        status: 'TestSuite', //will be overwritten if this log is for actual test
+        name: (this.name ? this.name : ""), 
+        message : []
+    };
 };
 
 exports.Log.prototype.flush = function () {
-    if (!this.flushed) {
+	if (!this.flushed) {
         this.flushed = true;
-        if (this.parent)
+        if (this.parent) {
             this.parent.flush();
-        this.stream.stream.print("+ Running" + (this.name ? " " + this.name : ""));
+        }
+    
+        this.stream.print(
+            this.indent.replace(/ /g, '.') +
+            this.content.status + " " + 
+            this.content.name);
+        
+        parts = this.content.message.join('').split(/\n/g);
+        if (parts.length > 0) {
+        	parts.slice(0, -1).forEach(function (line) {
+                this.stream.print(this.indent + "    " + line + "\n");
+        	}, this);
+        	last = 	parts.pop();
+        	if (last && last != '') { 
+                this.stream.print(this.indent + "    " + last);
+        	}
+        }
+        this.stream.print("\n");
     }
 }
 
-exports.Log.prototype.pass = function (message) {
+exports.Log.prototype.pass = function () {
     this.passes += 1;
     this.root.passes += 1;
-    if (this.options.showPasses)
-        this.print("\0green(PASS" + (message ? ":\0) " + message : "\0)"));
+    this.content.status = "PASS";
 };
 
 exports.Log.prototype.fail = function (exception) {
     this.fails += 1;
     this.root.fails += 1;
 
-    var stacktrace = getStackTrace(exception);
-    
-    this.flush(); // prints title if it hasn't been yet
-    this.print("\0yellow(FAIL" + (exception.message ? ": " + exception.message + "\0)": "\0)"));
-    if (exception.operator) {
-        this.print("\0yellow(Expected: "+jsDump.parse(exception.expected));
-        this.print("Actual: "+jsDump.parse(exception.actual));
-        this.print("Operator: "+exception.operator+"\0)");
+    this.content.status = "FAIL";
+    if (exception.message) {
+    	 this.content.message.push("\n" + exception.message);
     }
-    if (this.options.showStackTraces && stacktrace)
-        this.print("\0blue("+stacktrace+"\0)");
-
+    
+    this.content.message.push("\nExpected: " + jsDump.parse(exception.expected));
+	this.content.message.push("; Actual: " + jsDump.parse(exception.actual));
+    if (exception.operator) {
+    	this.content.message.push("; Operator: " + exception.operator);
+    }
 };
 
-exports.Log.prototype.error = function (exception, message) {
+exports.Log.prototype.error = function (exception) {
     this.errors += 1;
     this.root.errors += 1;
 
     var stacktrace = getStackTrace(exception);
     
-    this.flush(); // prints title if it hasn't been yet
-    this.print("\0red(ERROR: "+exception + "\0)");
-    if (stacktrace)
-        this.print("\0blue("+stacktrace+"\0)");
-    
-};
-
-exports.Log.prototype.begin = function () {
-    TERM.stream.write("\0blue(");
-};
-
-exports.Log.prototype.end = function () {
-    TERM.stream.write("\0)");
+    this.content.status = "ERROR";
+    if (!this.options.showStackTraces) { //stack trace usually contains message
+        this.content.message.push("\n" + exception);
+    } else {
+    	this.content.message.push("\n" + stacktrace);
+    }
 };
 
 exports.Log.prototype.report = function () {
-    this.stream.stream.print([
-        color("Passes: " + this.passes, "green", this.passes),
-        color("Fails: " + this.fails, "yellow", this.fails),
-        color("Errors: " + this.errors, "red", this.errors)
+    this.stream.print([
+        "Passes: " + this.passes,
+        "Fails: " + this.fails,
+        "Errors: " + this.errors
     ].join(", "));
-};
-
-var color = function (message, color, whether) {
-    if (whether)
-        return "\0" + color + "(" + message + "\0)";
-    else
-        return message;
-};
-
-exports.Log.prototype.print = function (message) {
-    this.stream.print(message);
 };
 
 exports.Log.prototype.section = function (name) {
@@ -252,22 +236,3 @@ exports.Log.prototype.Assert = function () {
         this.assert = new ASSERT.Assert(this);
     return this.assert;
 };
-
-/**
-    Section adapters wrap any object with a print
-    method such that every line is indented.
-*/
-exports.Section = function (stream, indent) {
-    this.stream = stream;
-    this.indent = indent || "    ";
-};
-
-exports.Section.prototype.print = function (message) {
-    message.split(/\n/g).forEach(function (line) {
-        this.stream.print(this.indent + line);
-    }, this);
-};
-
-if (require.main == module)
-    exports.run();
-
