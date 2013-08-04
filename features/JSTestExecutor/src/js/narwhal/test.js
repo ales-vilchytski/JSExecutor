@@ -43,11 +43,11 @@ exports.run = function(test, opts) {
 	if (!opts) {
 		opts = {};
 	}
-	(opts.title) ? (opts) : (opts.title = '');
-	(opts.showPasses) ? (opts) : (opts.showPasses = true);
-	(opts.showStackTraces) ? (opts) : (opts.showStackTraces = true);
+	(opts.name) ? (opts) : (opts.name = '');
+	(typeof opts.showPasses != 'undefined') ? (opts) : (opts.showPasses = true);
+	(opts.out && opts.out.print) ? (opts) : (opts.out = java.lang.System.out);
 	
-	var log = new exports.Log(opts.title, opts);
+	var log = new exports.Log(opts.name, opts, opts.out);
 	
 	_run(test, log);
 
@@ -103,19 +103,17 @@ var _run = function (test, log, options) {
 
 function getStackTrace(e) {
     if (!e) {
+        return "";
+    } else if (e instanceof java.lang.Exception) {
+        var s = new Packages.java.io.StringWriter();
+        e.printStackTrace(new Packages.java.io.PrintWriter(s));
+        return String(s.toString());
+    } else if (e.stack) {
+        return String(e.message + "\n" + e.stack);
+    } else {
+        return String(e);
+    }
     return "";
-}
-else if (e instanceof java.lang.Exception) {
-    var s = new Packages.java.io.StringWriter();
-    e.printStackTrace(new Packages.java.io.PrintWriter(s));
-    return String(s.toString());
-}
-else if (e.stack) {
-    return String(e.message + "\n" + e.stack);
-} else {
-    return String(e);
-}
-return "";
 }
 
 /*
@@ -164,22 +162,26 @@ exports.Log.prototype.flush = function () {
             this.parent.flush();
         }
     
-        this.stream.print(
-            this.indent.replace(/ /g, '.') +
-            this.content.status + " " + 
-            this.content.name);
-        
-        parts = this.content.message.join('').split(/\n/g);
-        if (parts.length > 0) {
-        	parts.slice(0, -1).forEach(function (line) {
-                this.stream.print(this.indent + "    " + line + "\n");
-        	}, this);
-        	last = 	parts.pop();
-        	if (last && last != '') { 
-                this.stream.print(this.indent + "    " + last);
-        	}
+        if (this.content.status == 'PASS' && this.options.showPasses == false) {
+            return
+        } else {
+            this.stream.print(
+                this.indent.replace(/ /g, '.') +
+                this.content.status + " " + 
+                this.content.name);
+            
+            parts = this.content.message.join('').split(/\n/g);
+            if (parts.length > 0) {
+            	parts.slice(0, -1).forEach(function (line) {
+                    this.stream.print(this.indent + "    " + line + "\n");
+            	}, this);
+            	last = 	parts.pop();
+            	if (last && last != '') { 
+                    this.stream.print(this.indent + "    " + last);
+            	}
+            }
+            this.stream.print("\n");
         }
-        this.stream.print("\n");
     }
 }
 
@@ -212,11 +214,7 @@ exports.Log.prototype.error = function (exception) {
     var stacktrace = getStackTrace(exception);
     
     this.content.status = "ERROR";
-    if (!this.options.showStackTraces) { //stack trace usually contains message
-        this.content.message.push("\n" + exception);
-    } else {
-    	this.content.message.push("\n" + stacktrace);
-    }
+    this.content.message.push("\n" + stacktrace);
 };
 
 exports.Log.prototype.report = function () {

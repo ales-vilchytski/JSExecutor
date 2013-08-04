@@ -19,13 +19,13 @@ public class RhinoExecutorTest {
 	@Before
 	public void setUp() throws Exception {
 		DirRequireBuilder builder = new DirRequireBuilder();
-		builder.addJSDir("/js/rhino_executor");
+		builder.addJSDir("js/rhino_executor");
 		executor = new RhinoExecutor(new ContextFactory(), builder);
 	}
 	
 	@Test
 	public void defaultCtxFactoryAndDirBuilder() {
-		DirRequireBuilder builder = new DirRequireBuilder("/js/rhino_executor");
+		DirRequireBuilder builder = new DirRequireBuilder("js/rhino_executor");
 		RhinoExecutor executorLoc = new RhinoExecutor(builder);
 		assertEquals(executorLoc.getContextFactory().getClass(), ContextFactory.class);
 		
