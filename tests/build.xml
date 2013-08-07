@@ -2,13 +2,22 @@
 <project xmlns:ivy="antlib:org.apache.ivy.ant" 
 		 default="test" basedir=".">
 	
+	<description>Tests Java classes and JS-modules of JSExecutor project
+	Use 'all_jtest' or 'all_jstest' to create and perform tests from scratch.
+	Use 'jtest' or 'jstest' to compile and perform tests with current resolved dependencies</description>
+	
 	<property name="src" location="src"/>
   	<property name="bin" location="bin"/>
   	<property name="lib" location="lib"/>
   	<property name="tmp" location="tmp"/>
 	
-	<target name='resolve_jtest' description='Retrieves dependencies for Java tests and copies them to ${lib}'>
+	<target name="ivysettings" description="Internal task setting ivy config">
+		<ivy:settings file="../ivysettings.xml" />
+	</target>
+	
+	<target name='resolve_jtest' depends='ivysettings' description='Retrieves dependencies for Java tests and copies them to ${lib}'>
 		<ivy:resolve file="ivy.xml" conf="jtest"/>
+		<!-- retrieve copy of artifacts to avoid further resolves --> 
 		<ivy:retrieve pattern="${lib}/[artifact]-[revision].[ext]"/>
 	</target>
 	
@@ -48,18 +57,18 @@
 		</junit>
 	</target>
 	
-	<target name='all_jtest' depends='resolve_jtest,jtest'>
-		<echo>Doing all Java tests from scratch</echo>
+	<target name='all_jtest' depends='resolve_jtest,jtest' description='Resolves dependencies and peforms Java tests'>
+		<echo>Done all Java tests from scratch</echo>
 	</target>
 	
-	<target name='resolve_jstest' description='Retrieves dependencies for JavaScript tests and copies them to ${lib}'>
+	<target name='resolve_jstest' depends='ivysettings' description='Retrieves dependencies for JavaScript tests and copies them to ${lib}'>
 		<ivy:resolve file="ivy.xml" conf="jstest"/>
 		<ivy:retrieve pattern="${lib}/[artifact]-[revision].[ext]"/>
 	</target>
 	
 	<target name='jstest' description='Performs all js-tests'>
 		<taskdef name='jstest' 
-			 	 classname='by.ales.javascript.JSTestExecutor' >
+			 	 classname='by.ales.javascript.JSR223TestExecutor' >
 			<classpath refid='lib.cpath'/>
 		</taskdef>
 	
@@ -73,27 +82,27 @@
 		</jstest>
 	</target>
 	
-	<target name='all_jstest' depends='resolve_jstest,jstest'>
-		<echo>Doing all JavaScript tests from scratch</echo>
+	<target name='all_jstest' depends='resolve_jstest,jstest' description='Resolves dependencies and peforms JavaScript tests'>
+		<echo>Done all JavaScript tests from scratch</echo>
 	</target>
 	
 	<target name='all_test' depends='all_jtest,all_jstest'>
-		<echo>Doing all tests from scratch</echo>
+		<echo>Done all tests from scratch</echo>
 	</target>
 	
 	<target name='prepare' depends='resolve_jtest,resolve_jstest,compile'>
-		<echo>Preparing all tests</echo>
+		<echo>Prepared all tests</echo>
 	</target>
 	
 	<target name='test' depends='jtest,jstest'>
-		<echo>Doing all tests</echo>
+		<echo>Done all tests</echo>
 	</target>
 
 	<target name="clean" description="Cleans up all output directories">
 		<delete dir="${tmp}"/>
 		<delete dir="${bin}"/>
     	<delete dir="${lib}"/>
-    	<delete dir="${dist}"/>
+    	<delete dir="${tmp}"/>
 	</target>
 
 </project>

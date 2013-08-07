@@ -10,53 +10,49 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.commonjs.module.Require;
 import org.mozilla.javascript.commonjs.module.RequireBuilder;
 
-
 /**
  * Wraps Rhino classes to evaluate JavaScript using CommonJS.module.
- * Use method {@link RhinoExecutor#eval(String, Map)} to evaluate module by ID.
+ * Use method {@link RhinoExecutor#execute(String, Map)} to evaluate module by ID.
  * All objects in map will be put into global scope.
  * <br>
  * Executor can be customized by passing {@link ContextFactory} (e.g.
  * sandboxed factory) and {@link RequireBuilder} (e.g. with custom
  * {@link ModuleScriptProvider}).
  * <br>
- * Default constructor creates instance which will search modules in '/js/' dir
- * using default {@link DirRequireBuilder} to create {@link Require} instances.
+ * !!! Multithreading isn't checked !!!
+ * <br>
+ * Executor instance can use JSDT Rhino Debugger 
+ * {@linkplain http://wiki.eclipse.org/JSDT/Debug/Rhino}
+ * To use scripts debug:
+ * <p>1. Put jars for debugging to classpath:</p>
+ *   <ul>
+ *     <li>org.eclipse.wst.jsdt.debug.rhino.debugger</li>
+ *	   <li>org.eclipse.wst.jsdt.debug.transport</li>
+ *	   <li>* they can be found at Eclipse IDE home when JSDT for Rhino installed</li>
+ *   </ul>
+ * <p>2. Use method {@link RhinoExecutor#startDebugger(String)} 
+ * with appropriate settings</p>
+ * <p>3. Start remote Rhino debugger (usually from Eclipse IDE)</p>
+ * <p>4. Enjoy</p>
+ * <p>* Tip: use 'Add script load breakpoint' at first usage to bind sources 
+ * to debugger</p>
  */
 public class RhinoExecutor {
 
 	private ContextFactory contextFactory;
 	private RequireBuilder requireBuilder;
 	private Listener debugger;
-	private boolean debug;
+	private boolean debugging;
 	private String debugSettings;
-	
-	private static DirRequireBuilder createDirRequireBuilder(String jsDir) {
-		DirRequireBuilder builder = new DirRequireBuilder();
-		try {
-			builder.addJSDir(jsDir);
-			return builder;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	/**
-	 * Default constructor using {@link ContextFactory} and '/js/' directory
-	 * to look for modules.
-	 */
-	public RhinoExecutor() {
-		this(new ContextFactory(), createDirRequireBuilder("/js/"));
-	}
-	
+		
 	/**
 	 * Creates instance using {@link ContextFactory}
 	 * 
-	 * @param jsDir path to directory with modules
+	 * @param requireBuilder
+	 *            object which builds {@link Require} instances
 	 */
-	public RhinoExecutor(String jsDir) {
-		this(new ContextFactory(), createDirRequireBuilder(jsDir));
+	public RhinoExecutor(RequireBuilder requireBuilder) {
+		this(new ContextFactory(), requireBuilder);
 	}
 
 	public RhinoExecutor(ContextFactory ctxFactory, RequireBuilder requireBuilder) {
@@ -69,9 +65,9 @@ public class RhinoExecutor {
 	}
 	
 	/**
-	 * Sets {@link ContextFactory} which be used to create contexts.
-	 * If debugger is used, then {@link RhinoExecutor#stopDebugger()} method
-	 * should be called first to detach debugger from factory.
+	 * Sets {@link ContextFactory} which will be used to create contexts. If
+	 * debugger is used, then {@link RhinoExecutor#stopDebugger()} method should
+	 * be called first to detach debugger from current factory.
 	 */
 	public void setContextFactory(ContextFactory ctxFactory) {
 		this.contextFactory = ctxFactory;
@@ -84,46 +80,59 @@ public class RhinoExecutor {
 	/**
 	 * Sets current builder of {@link Require} instances
 	 * 
-	 * @param requireBuilder builder which be called every call of 
-	 * 						 {@link RhinoExecutor#eval(String, Map)}
+	 * @param requireBuilder
+	 *            builder which be called every call of
+	 *            {@link RhinoExecutor#execute(String, Map)}
 	 */
 	public void setRequireBuilder(RequireBuilder requireBuilder) {
 		this.requireBuilder = requireBuilder;
 	}
 
 	/**
-	 * Executes module in it's own scope. Similar to eval("moduleId", null).
+	 * Executes module in it's own scope. Similar to execute("moduleId", null).
 	 * 
-	 * @param moduleId id of module according to CommonJS.module spec
+	 * @param moduleId
+	 *            id of module according to CommonJS.module spec
 	 */
-	public void eval(String moduleId) {
-		eval(moduleId, null);
+	public Object execute(String moduleId) {
+		return execute(moduleId, null);
 	}
 
 	/**
-	 * Executes module in it'w own scope using additional Java objects in global
+	 * Executes module in it's own scope using additional Java objects in global
 	 * scope.
+	 * <br>
+	 * Note, if require is sandboxed and provided module id isn't present then
+	 * this method do nothing in Rhino-1.7R4, possibly due bug.
 	 * 
-	 * @param moduleId id of module according to CommonJS.module spec
-	 * @param javaScope map of objects which will be put into global scope (will
-	 * 					be accessible in all modules, required by executed) 
+	 * @param moduleId
+	 *            id of module according to CommonJS.module spec
+	 * @param javaScope
+	 *            map of objects which will be put into global scope (will be
+	 *            accessible in all modules, required by executed one)
 	 */
-	public void eval(String moduleId, Map<String, Object> javaScope) {
+	public Object execute(String moduleId,
+			Map<String, ? extends Object> javaScope) {
 		Context ctx = contextFactory.enterContext();
 		try {
 			ScriptableObject scope = ctx.initStandardObjects();
 			if (javaScope != null) {
-				for (Map.Entry<String, Object> entry : javaScope.entrySet()) {
+				for (Map.Entry<String, ? extends Object> entry : javaScope
+						.entrySet()) {
 					scope.put(entry.getKey(), scope, entry.getValue());
 				}
 			}
-			
+
 			Require require = requireBuilder.createRequire(ctx, scope);
+
+			// Sandboxed Require.requireMain in Rhino 1.7R4 method does nothing
+			// when there is no module with module id (it may be bug).
+			// Then may be better to  use Require.call to execute module 
+			// in module's scope:
+			// return require.call(ctx, scope, null, new String[]{moduleId});
+			// But it breaks 'require.main == module' contract
 			
-			//Sandboxed Require.requireMain method does nothing when 
-			//there is no module with module id (it may be bug). 
-			//Then use Require.call to execute module in module's scope
-			require.call(ctx, scope, null, new String[]{moduleId});
+			return require.requireMain(ctx, moduleId);
 		} finally {
 			Context.exit();
 		}
@@ -132,8 +141,8 @@ public class RhinoExecutor {
 	/**
 	 * @return true if debugger started
 	 */
-	public boolean isDebug() {
-		return debug;
+	public boolean isDebugging() {
+		return debugging;
 	}
 	
 	/**
@@ -152,12 +161,14 @@ public class RhinoExecutor {
 	
 	/**
 	 * Starts Eclipse JSDT Rhino Debugger associated with current ContextFactory
-	 * if it's accessible in classpath.
-	 * See page on wiki {@linkplain http://wiki.eclipse.org/JSDT/Debug/Embedding_Rhino_Debugger}
+	 * if it's accessible in classpath. See page on wiki 
+	 * {@linkplain http://wiki.eclipse.org/JSDT/Debug/Embedding_Rhino_Debugger}
 	 * 
-	 * @param debugSettings debug settings for JSDT Rhino Debugger
+	 * @param debugSettings
+	 *            debug settings for JSDT Rhino Debugger
+	 * @return true if debugger is started
 	 */
-	public void startDebugger(String debugSettings) {
+	public boolean startDebugger(String debugSettings) {
 		if (debugger == null) {
 			Constructor<?> debuggerConstructor;
 			try {
@@ -171,17 +182,20 @@ public class RhinoExecutor {
 
 				contextFactory.addListener(debugger);
 				debugger.getClass().getMethod("start").invoke(debugger);
-				debug = true;
+				debugging = true;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+		return debugging;
 	}
 	
 	/**
 	 * Stops debugger instance associated with current ContextFactory.
+	 * 
+	 * @return true if debugger is stopped
 	 */
-	public void stopDebugger() {
+	public boolean stopDebugger() {
 		if (debugger != null) {
 			try {
 				getContextFactory().removeListener(debugger);
@@ -190,7 +204,8 @@ public class RhinoExecutor {
 				e.printStackTrace();
 			}
 			debugger = null;
-			debug = false;
+			debugging = false;
 		}
+		return !debugging;
 	}
 }

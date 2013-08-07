@@ -1,15 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:ivy="antlib:org.apache.ivy.ant"
-		 default="jar" basedir=".">
+		 default="dist" basedir=".">
+	
+	<description>Builds and publishes JSExecutor
+	Use 'resolve' to retrieve dependencies
+	Use 'jar' to build .jar with current retrieved dependencies
+	Use 'dist' to create .jar from scratch</description>
 	
 	<property name="src" location="src"/>
   	<property name="bin" location="bin"/>
+	<property name="lib" location="lib"/>
   	<property name="dist" location="dist"/>
+	
+	<target name="ivysettings" description="Internal task setting ivy config">
+		<ivy:settings file="ivysettings.xml" />
+	</target>
+	
+	<target name="resolve" depends="ivysettings" description="Retrieve all dependencies to ${lib}">
+		<ivy:resolve file="ivy.xml"/>
+	<!--	<ivy:report todir="ivy-report" graph="false"/> -->
+		<!-- retrieve copy of artifacts to avoid further resolves --> 
+		<ivy:retrieve pattern="${lib}/[artifact]-[revision].[ext]" sync="true"/>
+    </target>
+	
+	<path id="lib.cpath">
+		<fileset dir="${lib}">
+        	<include name="**/*.jar"/>
+    	</fileset>
+	</path>
 	
 	<target name="compile" description="Compiles all Java classes and copies all .js files to ${bin}">
 		<mkdir dir="${bin}"/>
 		<javac 	srcdir="${src}"
          		destdir="${bin}"
+			    classpathref="lib.cpath"
   		/>
   		<copy todir="${bin}">
 			<fileset dir="${src}" includes="**/*.js"/>
@@ -17,17 +41,17 @@
 	</target>
 	
 	<target name="jar" depends="compile" description="Compiles, then create jar in ${dist}">
+    	<delete dir="${dist}"/>
 		<jar destfile="${dist}/jsexecutor.jar" >
 		    <fileset dir="${bin}"/>
 		</jar>
 	</target>
 	
-	<target name="dist" depends="jar" description="Creates jar with distribution">
-		<echo>Creating distribution:</echo>
+	<target name="dist" depends="resolve,jar" description="Creates jar with distribution">
+		<echo>Distribution created</echo>
 	</target>
 		
 	<target name="publish" depends="dist" description="Compiles, creates jar and publish it to local repo">
-		<ivy:resolve file="ivy.xml"/>
 		<ivy:publish resolver="local" pubrevision="1.0" overwrite="true">
 		   <artifacts pattern="${dist}/[artifact].[ext]"/>
 		</ivy:publish>
@@ -35,6 +59,7 @@
 	
 	<target name="clean" description="Cleans up all output directories">
 		<delete dir="${bin}"/>
+    	<delete dir="${lib}"/>
     	<delete dir="${dist}"/>
 	</target>
 	

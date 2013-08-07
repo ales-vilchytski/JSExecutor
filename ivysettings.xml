@@ -1,0 +1,27 @@
+<ivysettings>
+	<!-- default settings for local repo from documentation -->
+	<property name="ivy.local.default.root" 
+		      value="${ivy.default.ivy.user.dir}/local" 
+		      override="false" />
+	<property name="ivy.local.default.ivy.pattern"
+			  value="[organisation]/[module]/[revision]/[type]s/[artifact].[ext]"
+			  override="false" />
+	<property name="ivy.local.default.artifact.pattern"
+			  value="[organisation]/[module]/[revision]/[type]s/[artifact].[ext]"
+			  override="false" />
+
+	<settings defaultResolver="default" defaultConflictManager="all" />
+	<caches>
+		<cache name="nocache" useOrigin="true" />
+	</caches>
+	<resolvers>
+		<chain name="default" dual="true">
+			<filesystem name="local" cache="nocache">
+				<ivy pattern="${ivy.local.default.root}/${ivy.local.default.ivy.pattern}" />
+				<artifact pattern="${ivy.local.default.root}/${ivy.local.default.artifact.pattern}" />
+			</filesystem>
+			<ibiblio name="public" m2compatible="true" />
+		</chain>
+	</resolvers>
+
+</ivysettings>

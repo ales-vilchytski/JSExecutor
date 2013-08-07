@@ -13,9 +13,14 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.FileSet;
 
-import by.ales.javascript.JSExecutor;
 
-public class JSTestExecutor extends Task {
+/**
+ * Ant task which uses {@link by.ales.javascript.JSR223Executor} and 
+ * {@link http://code.google.com/p/rhinounit/} to run JavaScript tests.
+ * <br>
+ * See example.xml to see how it can be used. 
+ */
+public class JSR223TestExecutor extends Task {
 
 	private String options = "{}";
 	private String ignoredGlobalVars = "";
@@ -55,7 +60,7 @@ public class JSTestExecutor extends Task {
 	
 	@Override 
 	public void execute() throws BuildException {
-		JSExecutor executor = new JSExecutor(jsExecutorVar);
+		JSR223Executor executor = new JSR223Executor(jsExecutorVar);
 		Bindings bindings = executor.getEngine().getBindings(
 				ScriptContext.ENGINE_SCOPE);
 		

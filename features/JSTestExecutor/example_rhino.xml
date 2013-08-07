@@ -1,28 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- example of use JSTestExecutor in Ant file -->
+<!-- example of use RhinoTestExecutor in Ant file -->
 <project default="jstest" basedir=".">
 		
 	<!--========= Add classpath with task ===== -->
 	<path id='built.cpath'>
+		<fileset dir="dist">
+			<include name="jstestexecutor.jar"/>
+		</fileset>
 		<fileset dir="lib">
-			<include name="jsexecutor.jar"/>
+			<include name="*.jar"/>
 		</fileset>
 	</path>
 	
 	<!--========= Create taskdef ========= -->
 	<taskdef name='jstest' 
-			 classname='by.ales.javascript.JSTestExecutor' >
+			 classname='by.ales.javascript.RhinoTestExecutor' >
 		<classpath refid='built.cpath'/>
 	</taskdef>
 	
 	<!--========= Sample target	========== -->
 	<target name='jstest'>
-		<jstest	options="{verbose:true, stackTrace:true}"
-				haltOnFirstFailure="true"
-				ignoredGlobalVars="JSON"
-				jsDir="/js"
-				startScript="start.js">
-			<fileset dir="${testdir}/js">
+		<jstest showPasses='false'>
+			<fileset dir="bin">
 				<include name="**/*_test.js"/>
 			</fileset>
 		</jstest>

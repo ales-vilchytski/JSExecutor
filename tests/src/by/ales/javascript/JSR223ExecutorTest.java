@@ -13,16 +13,36 @@ import javax.script.ScriptException;
 import org.junit.Before;
 import org.junit.Test;
 
-public class JSExecutorTest {
+public class JSR223ExecutorTest {
 	protected static final String COUNT_INCLUDES_JS = "count_includes.js";
-	protected JSExecutor executor = null;
+	protected JSR223Executor executor = null;
 	protected static final String JS_DIR = "/js/executor_js/";
 	protected static final String SCRIPT_DIR = "bin/js/executor_js/";
 	
 	@Before
 	public void setUp() {
-		this.executor = new JSExecutor();
+		this.executor = new JSR223Executor();
 		executor.setJsDir(JS_DIR);
+	}
+	
+	@Test
+	public void testDefaultExecutorVar() throws ScriptException {
+		JSR223Executor executor = new JSR223Executor();
+		executor.setJsDir(JS_DIR);
+		assertEquals("$", executor.getExecutorVar());
+		
+		Object res = executor.execute("test_defvar.js");
+		assertEquals("ok", res.toString());
+	}
+	
+	@Test
+	public void testSetExecutorVar() throws ScriptException {
+		JSR223Executor executor = new JSR223Executor("ExecutorVar");
+		executor.setJsDir(JS_DIR);
+		assertEquals("ExecutorVar", executor.getExecutorVar());
+		
+		Object res = executor.execute("test_defvar.js");
+		assertNotSame("ok", res.toString());
 	}
 		
 	@Test
@@ -106,23 +126,4 @@ public class JSExecutorTest {
 		assertEquals("1.0", count.toString());
 	}
 	
-	@Test
-	public void testDefaultExecutorVar() throws ScriptException {
-		JSExecutor executor = new JSExecutor();
-		executor.setJsDir(JS_DIR);
-		assertEquals("$", executor.getExecutorVar());
-		
-		Object res = executor.execute("test_defvar.js");
-		assertEquals("ok", res.toString());
-	}
-	
-	@Test
-	public void testSetExecutorVar() throws ScriptException {
-		JSExecutor executor = new JSExecutor("ExecutorVar");
-		executor.setJsDir(JS_DIR);
-		assertEquals("ExecutorVar", executor.getExecutorVar());
-		
-		Object res = executor.execute("test_defvar.js");
-		assertNotSame("ok", res.toString());
-	}
 }

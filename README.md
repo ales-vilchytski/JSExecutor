@@ -1,18 +1,13 @@
-Sample wrapper for JavaScript JSR 223 (Java6) engine. 
----------------------------------------------
+Examples of using JavaScript in Java application (Mozilla Rhino, JSR223)  
+===================================
 
-Main purpose of this classes is to bring example of use JS + Java and related tools (Ant, Ivy, JUnit etc)
-This project has overcomplicated structure with test and features subprojects.
+Main purpose of this project is to bring examples of using JS in Java. Some Java tools (Ant, Ivy, JUnit etc) are used too.
+This project has overcomplicated (it's example) structure with 'test' and 'features' subprojects.
 The most important classes: 
-* <i>by.ales.javascript.JSExecutor</i> - wrapper for JSR-223
-* <i>by.ales.javascript.JSTestExecutor</i> - Ant-task that can be used to run Rhinounit tests (placed under features)
+* [by.ales.javascript.RhinoExecutor](/src/by/ales/javascript/RhinoExecutor.java) - wrapper for Rhino using CommonJS.module feature
+* [by.ales.javascript.JSR223Executor](/src/by/ales/javascript/JSR223Executor.java) - wrapper for JSR-223 JavaScript engine
+* [by.ales.javascript.JSTestExecutor](/features/JSTestExecutor/src/by/ales/javascript/RhinoTestExecutor.java) - Ant-task that can be used to run Rhinounit tests
 
-Test directory contains tests for JSExecutor and .js files (runned via JSTestExecutor). 
-Tests can be runned separately for Java and JS.
+Test directory contains tests for all major Java classes and JS modules. Tests can be runned separately for Java and JavaScript.
 
-For specific information see source code :)
-
-Example of use: <a href="https://github.com/ales-vilchytski/JMineSweeper">JMineSweeper</a>
-
-P.S. Java 7 includes Rhino 1.7R3 which implements <a href="https://developer.mozilla.org/en-US/docs/New_in_Rhino_1.7R3">commonJS</a>, 
-so this project is mostly useless in practical sense. 
+Example of using this project in Java desktop application: <a href="https://github.com/ales-vilchytski/JMineSweeper">JMineSweeper</a> 
