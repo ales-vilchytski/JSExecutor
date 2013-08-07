@@ -4,8 +4,11 @@
 		
 	<!--========= Add classpath with task ===== -->
 	<path id='built.cpath'>
+		<fileset dir="dist">
+			<include name="jstestexecutor.jar"/>
+		</fileset>
 		<fileset dir="lib">
-			<include name="jsexecutor.jar"/>
+			<include name="*.jar"/>
 		</fileset>
 	</path>
 	

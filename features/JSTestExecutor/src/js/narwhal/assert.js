@@ -55,7 +55,13 @@ assert.AssertionError = function (options) {
     this.operator = options.operator;
 
     // this lets us get a stack trace in Rhino
-    this.rhinoException = new Packages.org.mozilla.javascript.JavaScriptException(this, null, 0);
+    exc = new Packages.org.mozilla.javascript.JavaScriptException(
+            this.prototype, null, 0);
+    // 0 - exc creation, 
+    // 1 - assertion creation,
+    // 2 - assertion method,
+    // 3 - test method
+    this.trace = exc.scriptStack[3]; 
 };
 
 // XXX extension

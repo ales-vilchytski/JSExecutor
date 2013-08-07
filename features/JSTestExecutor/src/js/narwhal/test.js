@@ -205,6 +205,9 @@ exports.Log.prototype.fail = function (exception) {
     if (exception.operator) {
     	this.content.message.push("; Operator: " + exception.operator);
     }
+    if (exception.trace) {
+        this.content.message.push("\n" + exception.trace);
+    }
 };
 
 exports.Log.prototype.error = function (exception) {

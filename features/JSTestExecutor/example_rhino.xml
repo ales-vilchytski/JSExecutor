@@ -20,7 +20,7 @@
 	
 	<!--========= Sample target	========== -->
 	<target name='jstest'>
-		<jstest>
+		<jstest showPasses='false'>
 			<fileset dir="bin">
 				<include name="**/*_test.js"/>
 			</fileset>
