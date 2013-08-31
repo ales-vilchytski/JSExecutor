@@ -1,5 +1,6 @@
 package by.ales.javascript;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,16 +38,25 @@ public class DirRequireBuilder extends RequireBuilder {
 	}
 	
 	/**
-	 * Creates builder with one searh directory
+	 * Convenient constructor creating builder with list of searching 
+	 * directories.
+	 * <br>
+	 * Swallows exceptions if errors occur
 	 * 
 	 * @param jsDir
 	 *            path to directory according to
 	 *            {@link Class#getResource(String)} which may not contain
 	 *            trailing '/', it will be appended
 	 */
-	public DirRequireBuilder(String jsDir) {
+	public DirRequireBuilder(String... jsDirs) {
 		this();
-		addJSDir(jsDir);
+		for (String jsDir : jsDirs) {
+		    try {
+			addJSDir(jsDir);
+		    } catch (IOException e) {
+			e.printStackTrace();
+		    }
+		}
 	}
 	
 	public DirRequireBuilder(List<URI> lookupPaths) {
@@ -74,22 +84,16 @@ public class DirRequireBuilder extends RequireBuilder {
 	 *            path relative to classpath according to 
 	 *            {@link ClassLoader#getResource(String)} which may or not 
 	 *            contain trailing '/' - it will be appended to denote directory
-	 * @return true if any directory exists and was added to paths
-	 * 
-	 * <br>TODO change return type and throw exception on problems
+	 * @return this (fluent interface)
+	 * @throws IOException - If I/O errors occur
 	 */
-	public boolean addJSDir(String path) {
-		int foundDirs = 0;
-
+	public DirRequireBuilder addJSDir(String path) throws IOException {
 		path = (!path.endsWith("/")) ? (path + "/") : (path);
 		
 		Enumeration<URL> dirs;
-		try {
-			dirs = getClass().getClassLoader().getResources(path);
-		} catch (IOException e) {
-			return false;
-		}
-			
+		int foundDirs = 0;
+		dirs = getClass().getClassLoader().getResources(path);
+		
 		while(dirs.hasMoreElements()) {
 			URL jsDir = dirs.nextElement();
 			try {
@@ -99,7 +103,11 @@ public class DirRequireBuilder extends RequireBuilder {
 				e.printStackTrace(); //won't be reached
 			}
 		}
-		return foundDirs > 0;
+		if (foundDirs == 0) {
+		    throw new FileNotFoundException(
+			    "There is no any directory '" + path + "' in classpath");
+		}
+		return this;
 	}
 		
 	@Override

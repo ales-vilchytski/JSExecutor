@@ -19,7 +19,7 @@ import org.mozilla.javascript.commonjs.module.RequireBuilder;
  * sandboxed factory) and {@link RequireBuilder} (e.g. with custom
  * {@link ModuleScriptProvider}).
  * <br>
- * !!! Multithreading isn't checked !!!
+ * !!! Not threadsafe !!!
  * <br>
  * Executor instance can use JSDT Rhino Debugger 
  * {@linkplain http://wiki.eclipse.org/JSDT/Debug/Rhino}
